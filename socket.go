@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/doquangtan/socketio/v4/engineio"
@@ -55,6 +56,7 @@ type Socket struct {
 	rooms     roomNames
 	listeners listeners
 	pingTime  time.Duration
+	data      atomic.Pointer[any]
 	dispose   []func()
 	Join      func(room string)
 	Leave     func(room string)
@@ -149,4 +151,15 @@ func (s *Socket) writer(t socket_protocol.PacketType, arg ...interface{}) error 
 		socket_protocol.WriteTo(w, t, nps, arg...)
 	}
 	return w.Close()
+}
+
+func (s *Socket) SetData(data any) {
+	s.data.Store(&data)
+}
+
+func (s *Socket) Data() any {
+	if data := s.data.Load(); data != nil {
+		return *data
+	}
+	return nil
 }

@@ -44,7 +44,7 @@ type Io struct {
 	namespaces       namespaces
 	sockets          connections
 	readChan         chan payload
-	onAuthentication func(params map[string]string) bool
+	onAuthentication func(socket *Socket, params map[string]string) bool
 	onConnection     connectionEvent
 	close            chan interface{}
 }
@@ -190,7 +190,7 @@ func (s *Io) OnConnection(fn connectionEventCallback) {
 	s.Of("/").onConnection.set("connection", fn)
 }
 
-func (s *Io) OnAuthentication(fn func(params map[string]string) bool) {
+func (s *Io) OnAuthentication(fn func(socket *Socket, params map[string]string) bool) {
 	s.onAuthentication = fn
 }
 
@@ -416,7 +416,7 @@ func (s *Io) handlerMessage(socket *Socket, message string) error {
 			if s.onAuthentication != nil {
 				dataJson := map[string]string{}
 				json.Unmarshal([]byte(rawpayload), &dataJson)
-				if !s.onAuthentication(dataJson) {
+				if !s.onAuthentication(socket, dataJson) {
 					socket_nps.writer(socket_protocol.CONNECT_ERROR, map[string]interface{}{
 						"message": "Not authenticated",
 					})
